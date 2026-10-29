@@ -1,3 +1,6 @@
+import { client } from "@/sanity/lib/client";
+import { urlFor } from "@/sanity/lib/image";
+
 export type ProductCategory =
   | "interior"
   | "exterior"
@@ -33,12 +36,37 @@ export interface Product {
   featured?: boolean;
 }
 
-export const SITE_CONFIG = {
+export interface SiteConfig {
+  name: string;
+  tagline: string;
+  city: string;
+  address: string;
+  whatsappNumber: string;
+  whatsappDisplay: string;
+  instagramUser: string;
+  instagramUrl: string;
+  email: string;
+  hours: string[];
+  shippingInfo: string;
+  googleMapsEmbed: string;
+}
+
+export interface CategoryInfo {
+  id: ProductCategory;
+  name: string;
+  description: string;
+  image: string;
+}
+
+/* =========================================================
+   DATOS DE RESPALDO AUTOMÁTICO (FALLBACK SI SANITY FALLA)
+   ========================================================= */
+export const SITE_CONFIG: SiteConfig = {
   name: "Piccolo Giardino",
   tagline: "Vivero Boutique & Refugio Botánico en Tucumán",
   city: "San Miguel de Tucumán, Tucumán",
   address: "Av. Mate de Luna 2850, San Miguel de Tucumán",
-  whatsappNumber: "5493815550192", // Solo números con código de país (549 + característica sin 0 + número sin 15)
+  whatsappNumber: "5493815550192",
   whatsappDisplay: "+54 9 381 555-0192",
   instagramUser: "piccologiardino.tuc",
   instagramUrl: "https://instagram.com/piccologiardino.tuc",
@@ -52,13 +80,6 @@ export const SITE_CONFIG = {
   googleMapsEmbed:
     "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d56964.26946958176!2d-65.25263565!3d-26.83149595!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94223792d6c56903%3A0xf88d5b92b5c56527!2sSan%20Miguel%20de%20Tucum%C3%A1n%2C%20Tucum%C3%A1n!5e0!3m2!1ses-419!2sar!4v1710000000000!5m2!1ses-419!2sar",
 };
-
-export interface CategoryInfo {
-  id: ProductCategory;
-  name: string;
-  description: string;
-  image: string;
-}
 
 export const CATEGORIES: CategoryInfo[] = [
   {
@@ -456,3 +477,178 @@ export const FAQS = [
       "Podés usar los filtros de nuestro catálogo ('Poca luz', 'Semisombra' o 'Sol') o escribirnos por WhatsApp enviando una foto del rincón donde querés ponerla. Te asesoramos sin compromiso.",
   },
 ];
+
+/* =========================================================
+   CONSULTAS GROQ A SANITY CON RESPALDO AUTOMÁTICO
+   ========================================================= */
+const PRODUCTS_GROQ_QUERY = `*[_type == "product"] | order(featured desc, _createdAt desc) {
+  "id": coalesce(slug.current, _id),
+  name,
+  scientificName,
+  category,
+  price,
+  originalPrice,
+  badges,
+  stock,
+  images,
+  externalImages,
+  shortDescription,
+  description,
+  potSize,
+  light,
+  water,
+  environment,
+  petFriendly,
+  careTips,
+  featured
+}`;
+
+const CATEGORIES_GROQ_QUERY = `*[_type == "category"] | order(order asc) {
+  id,
+  name,
+  description,
+  image,
+  externalImage
+}`;
+
+const SITE_SETTINGS_GROQ_QUERY = `*[_type == "siteSettings"][0] {
+  name,
+  tagline,
+  city,
+  address,
+  whatsappNumber,
+  whatsappDisplay,
+  instagramUser,
+  instagramUrl,
+  email,
+  hours,
+  shippingInfo,
+  googleMapsEmbed
+}`;
+
+export async function getStoreData(): Promise<{
+  products: Product[];
+  categories: CategoryInfo[];
+  siteConfig: SiteConfig;
+}> {
+  if (!client) {
+    return {
+      products: PRODUCTS,
+      categories: CATEGORIES,
+      siteConfig: SITE_CONFIG,
+    };
+  }
+
+  try {
+    const [rawProducts, rawCategories, rawSettings] = await Promise.all([
+      client.fetch(PRODUCTS_GROQ_QUERY, {}, { next: { tags: ["sanity-content"], revalidate: 10 } }),
+      client.fetch(CATEGORIES_GROQ_QUERY, {}, { next: { tags: ["sanity-content"], revalidate: 10 } }),
+      client.fetch(SITE_SETTINGS_GROQ_QUERY, {}, { next: { tags: ["sanity-content"], revalidate: 10 } }),
+    ]);
+
+    // Mapear productos de Sanity convirtiendo imágenes con @sanity/image-url
+    const products: Product[] =
+      Array.isArray(rawProducts) && rawProducts.length > 0
+        ? rawProducts.map((p: Record<string, unknown>) => {
+            const uploadedUrls = Array.isArray(p.images)
+              ? p.images
+                  .map((img) => {
+                    try {
+                      return urlFor(img).width(900).quality(85).auto("format").url();
+                    } catch {
+                      return null;
+                    }
+                  })
+                  .filter((u): u is string => Boolean(u))
+              : [];
+
+            const externalUrls = Array.isArray(p.externalImages)
+              ? (p.externalImages as string[]).filter(Boolean)
+              : [];
+
+            const finalImages =
+              uploadedUrls.length > 0
+                ? uploadedUrls
+                : externalUrls.length > 0
+                ? externalUrls
+                : ["https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=900&q=80"];
+
+            return {
+              id: String(p.id || ""),
+              name: String(p.name || "Planta sin nombre"),
+              scientificName: p.scientificName ? String(p.scientificName) : undefined,
+              category: (p.category as ProductCategory) || "interior",
+              price: Number(p.price ?? 0),
+              originalPrice: p.originalPrice ? Number(p.originalPrice) : undefined,
+              badges: Array.isArray(p.badges) ? (p.badges as ProductBadge[]) : [],
+              stock: (p.stock as StockStatus) || "disponible",
+              images: finalImages,
+              shortDescription: String(p.shortDescription || ""),
+              description: String(p.description || ""),
+              potSize: String(p.potSize || ""),
+              light: (p.light as LightLevel) || "semisombra",
+              water: (p.water as WaterLevel) || "medio",
+              environment: (p.environment as EnvironmentType) || "interior",
+              petFriendly: Boolean(p.petFriendly),
+              careTips: Array.isArray(p.careTips) ? (p.careTips as string[]) : [],
+              featured: Boolean(p.featured),
+            };
+          })
+        : PRODUCTS;
+
+    // Mapear categorías de Sanity
+    const categories: CategoryInfo[] =
+      Array.isArray(rawCategories) && rawCategories.length > 0
+        ? rawCategories.map((c: Record<string, unknown>) => {
+            let imageUrl =
+              "https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=900&q=80";
+            if (c.image) {
+              try {
+                imageUrl = urlFor(c.image).width(900).quality(80).auto("format").url();
+              } catch {
+                // Usa respaldo si falla
+              }
+            } else if (typeof c.externalImage === "string" && c.externalImage) {
+              imageUrl = c.externalImage;
+            }
+
+            return {
+              id: (c.id as ProductCategory) || "interior",
+              name: String(c.name || ""),
+              description: String(c.description || ""),
+              image: imageUrl,
+            };
+          })
+        : CATEGORIES;
+
+    // Mapear datos del vivero (siteSettings)
+    const siteConfig: SiteConfig = rawSettings
+      ? {
+          name: rawSettings.name || SITE_CONFIG.name,
+          tagline: rawSettings.tagline || SITE_CONFIG.tagline,
+          city: rawSettings.city || SITE_CONFIG.city,
+          address: rawSettings.address || SITE_CONFIG.address,
+          whatsappNumber: rawSettings.whatsappNumber || SITE_CONFIG.whatsappNumber,
+          whatsappDisplay: rawSettings.whatsappDisplay || SITE_CONFIG.whatsappDisplay,
+          instagramUser: rawSettings.instagramUser || SITE_CONFIG.instagramUser,
+          instagramUrl: rawSettings.instagramUrl || SITE_CONFIG.instagramUrl,
+          email: rawSettings.email || SITE_CONFIG.email,
+          hours:
+            Array.isArray(rawSettings.hours) && rawSettings.hours.length > 0
+              ? rawSettings.hours
+              : SITE_CONFIG.hours,
+          shippingInfo: rawSettings.shippingInfo || SITE_CONFIG.shippingInfo,
+          googleMapsEmbed: rawSettings.googleMapsEmbed || SITE_CONFIG.googleMapsEmbed,
+        }
+      : SITE_CONFIG;
+
+    return { products, categories, siteConfig };
+  } catch (error) {
+    console.warn("Usando catálogo local de respaldo (Sanity aún sin datos o sin conexión):", error);
+    return {
+      products: PRODUCTS,
+      categories: CATEGORIES,
+      siteConfig: SITE_CONFIG,
+    };
+  }
+}

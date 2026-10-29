@@ -4,16 +4,26 @@ import React from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
-import { CATEGORIES, PRODUCTS, ProductCategory } from "@/data/products";
+import {
+  CATEGORIES,
+  PRODUCTS,
+  CategoryInfo,
+  Product,
+  ProductCategory,
+} from "@/data/products";
 
 interface CategoriesSectionProps {
   selectedCategory: ProductCategory | "todas";
   onSelectCategory: (cat: ProductCategory) => void;
+  categories?: CategoryInfo[];
+  products?: Product[];
 }
 
 export function CategoriesSection({
   selectedCategory,
   onSelectCategory,
+  categories = CATEGORIES,
+  products = PRODUCTS,
 }: CategoriesSectionProps) {
   const handleCategoryClick = (catId: ProductCategory) => {
     onSelectCategory(catId);
@@ -41,8 +51,8 @@ export function CategoriesSection({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {CATEGORIES.map((cat, index) => {
-            const count = PRODUCTS.filter((p) => p.category === cat.id).length;
+          {categories.map((cat, index) => {
+            const count = products.filter((p) => p.category === cat.id).length;
             const isActive = selectedCategory === cat.id;
 
             return (

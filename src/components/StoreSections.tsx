@@ -18,7 +18,7 @@ import {
   Send,
   ShoppingBag,
 } from "lucide-react";
-import { SITE_CONFIG, TESTIMONIALS, FAQS } from "@/data/products";
+import { SITE_CONFIG, SiteConfig, TESTIMONIALS, FAQS } from "@/data/products";
 import { formatARS, getWhatsAppUrl } from "@/lib/utils";
 import { MonsteraLeafSvg } from "./BotanicalSvgs";
 
@@ -41,9 +41,6 @@ function InstagramIcon({ className = "w-5 h-5" }: { className?: string }) {
   );
 }
 
-/* =========================================================
-   6. GUÍA DE CUIDADOS BOTÁNICOS
-   ========================================================= */
 export function CareGuideSection() {
   const tips = [
     {
@@ -115,9 +112,6 @@ export function CareGuideSection() {
   );
 }
 
-/* =========================================================
-   7. SOBRE NOSOTROS
-   ========================================================= */
 export function AboutSection() {
   return (
     <section id="nosotros" className="py-16 md:py-24 bg-[#1B3B2B] text-[#FAF7F2]">
@@ -184,9 +178,6 @@ export function AboutSection() {
   );
 }
 
-/* =========================================================
-   8. CÓMO COMPRAR Y ENVÍOS MEDIANTE UBER
-   ========================================================= */
 export function HowToBuySection() {
   const steps = [
     {
@@ -259,9 +250,6 @@ export function HowToBuySection() {
   );
 }
 
-/* =========================================================
-   9. TESTIMONIOS DE CLIENTES
-   ========================================================= */
 export function TestimonialsSection() {
   return (
     <section className="py-16 md:py-24 bg-[#FAF7F2]">
@@ -303,9 +291,6 @@ export function TestimonialsSection() {
   );
 }
 
-/* =========================================================
-   10. PREGUNTAS FRECUENTES EN ACORDEÓN
-   ========================================================= */
 export function FaqSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
@@ -356,26 +341,22 @@ export function FaqSection() {
   );
 }
 
-/* =========================================================
-   11. CONTACTO + MAPA EMBEBIDO + HORARIOS
-   ========================================================= */
-export function ContactSection() {
+export function ContactSection({ siteConfig = SITE_CONFIG }: { siteConfig?: SiteConfig }) {
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
 
   const handleWhatsAppSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const text = `¡Hola ${SITE_CONFIG.name}! Soy ${
+    const text = `¡Hola ${siteConfig.name}! Soy ${
       name.trim() || "un cliente"
     }.\n\nConsulta: ${message.trim()}`;
-    window.open(getWhatsAppUrl(SITE_CONFIG.whatsappNumber, text), "_blank");
+    window.open(getWhatsAppUrl(siteConfig.whatsappNumber, text), "_blank");
   };
 
   return (
     <section id="contacto" className="py-16 md:py-24 bg-[#FAF7F2]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Información y Formulario */}
           <div className="lg:col-span-6 space-y-6">
             <div>
               <span className="text-xs font-bold uppercase tracking-widest text-[#C85A32] block mb-2">
@@ -385,7 +366,7 @@ export function ContactSection() {
                 Contacto y Ubicación
               </h2>
               <p className="text-sm sm:text-base text-[#1C241E]/80">
-                Estamos en {SITE_CONFIG.city}. Escribinos para asesoramiento personalizado o
+                Estamos en {siteConfig.city}. Escribinos para asesoramiento personalizado o
                 pedidos mayoristas y de paisajismo.
               </p>
             </div>
@@ -395,7 +376,7 @@ export function ContactSection() {
                 <MapPin className="w-5 h-5 text-[#C85A32] shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-[#1B3B2B] block">Dirección del vivero</strong>
-                  <span className="text-[#1C241E]/80">{SITE_CONFIG.address}</span>
+                  <span className="text-[#1C241E]/80">{siteConfig.address}</span>
                 </div>
               </div>
 
@@ -403,7 +384,7 @@ export function ContactSection() {
                 <Clock className="w-5 h-5 text-[#3A5A40] shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-[#1B3B2B] block">Horarios de atención</strong>
-                  {SITE_CONFIG.hours.map((h) => (
+                  {siteConfig.hours.map((h) => (
                     <span key={h} className="text-[#1C241E]/80 block">
                       {h}
                     </span>
@@ -416,18 +397,17 @@ export function ContactSection() {
                 <div>
                   <strong className="text-[#1B3B2B] block">Instagram</strong>
                   <a
-                    href={SITE_CONFIG.instagramUrl}
+                    href={siteConfig.instagramUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#C85A32] hover:underline font-medium"
                   >
-                    @{SITE_CONFIG.instagramUser}
+                    @{siteConfig.instagramUser}
                   </a>
                 </div>
               </div>
             </div>
 
-            {/* Formulario rápido a WhatsApp */}
             <form
               onSubmit={handleWhatsAppSubmit}
               className="bg-white p-6 rounded-3xl border border-[#1B3B2B]/10 space-y-4"
@@ -476,11 +456,10 @@ export function ContactSection() {
             </form>
           </div>
 
-          {/* Mapa de Google Maps */}
           <div className="lg:col-span-6 h-96 lg:h-auto min-h-[380px] rounded-3xl overflow-hidden border border-[#1B3B2B]/15 shadow-sm bg-[#EFF3EE]">
             <iframe
-              title="Ubicación de Piccolo Giardino en San Miguel de Tucumán"
-              src={SITE_CONFIG.googleMapsEmbed}
+              title={`Ubicación de ${siteConfig.name} en ${siteConfig.city}`}
+              src={siteConfig.googleMapsEmbed}
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -495,21 +474,18 @@ export function ContactSection() {
   );
 }
 
-/* =========================================================
-   12. FOOTER COMPLETO
-   ========================================================= */
-export function Footer() {
+export function Footer({ siteConfig = SITE_CONFIG }: { siteConfig?: SiteConfig }) {
   return (
     <footer className="bg-[#142C20] text-[#FAF7F2]/85 pt-14 pb-24 md:pb-12 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-white/10">
           <div className="md:col-span-2 space-y-3">
             <span className="font-serif text-2xl font-bold text-white block">
-              {SITE_CONFIG.name}
+              {siteConfig.name}
             </span>
             <p className="text-sm text-[#FAF7F2]/70 max-w-sm leading-relaxed">
-              {SITE_CONFIG.tagline}. Plantas de interior, exterior, frutales, suculentas, macetas y
-              sustratos con envíos por Uber en {SITE_CONFIG.city}.
+              {siteConfig.tagline}. Plantas de interior, exterior, frutales, suculentas, macetas y
+              sustratos con envíos por Uber en {siteConfig.city}.
             </p>
           </div>
 
@@ -546,16 +522,16 @@ export function Footer() {
               Contacto
             </h3>
             <ul className="space-y-2 text-sm text-[#FAF7F2]/75">
-              <li>{SITE_CONFIG.address}</li>
-              <li>WhatsApp: {SITE_CONFIG.whatsappDisplay}</li>
-              <li>Instagram: @{SITE_CONFIG.instagramUser}</li>
+              <li>{siteConfig.address}</li>
+              <li>WhatsApp: {siteConfig.whatsappDisplay}</li>
+              <li>Instagram: @{siteConfig.instagramUser}</li>
             </ul>
           </div>
         </div>
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[#FAF7F2]/60 gap-2">
           <p>
-            © {new Date().getFullYear()} {SITE_CONFIG.name} — San Miguel de Tucumán, Argentina.
+            © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.city}.
           </p>
           <p>Diseñado con amor por las plantas 🌿</p>
         </div>
@@ -564,26 +540,24 @@ export function Footer() {
   );
 }
 
-/* =========================================================
-   13. BOTÓN FLOTANTE DE WHATSAPP + BARRA RÁPIDA EN MÓVIL
-   ========================================================= */
 export function FloatingActions({
   cartCount,
   cartTotal,
   onOpenCart,
+  siteConfig = SITE_CONFIG,
 }: {
   cartCount: number;
   cartTotal: number;
   onOpenCart: () => void;
+  siteConfig?: SiteConfig;
 }) {
   const whatsappUrl = getWhatsAppUrl(
-    SITE_CONFIG.whatsappNumber,
-    "¡Hola Piccolo Giardino! Quería hacerles una consulta rápida 🌿"
+    siteConfig.whatsappNumber,
+    `¡Hola ${siteConfig.name}! Quería hacerles una consulta rápida 🌿`
   );
 
   return (
     <>
-      {/* Barra inferior en celular cuando hay productos en el pedido */}
       {cartCount > 0 && (
         <div className="fixed bottom-4 left-4 right-20 sm:hidden z-40">
           <button
@@ -602,12 +576,11 @@ export function FloatingActions({
         </div>
       )}
 
-      {/* Botón Flotante de WhatsApp siempre visible */}
       <a
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Escribir por WhatsApp a Piccolo Giardino"
+        aria-label={`Escribir por WhatsApp a ${siteConfig.name}`}
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 w-14 h-14 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-xl flex items-center justify-center transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1B3B2B]"
       >
         <MessageCircle className="w-7 h-7 fill-current" />

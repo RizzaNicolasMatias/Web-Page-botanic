@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { Sprout, ShoppingBag, Menu, X, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { SITE_CONFIG } from "@/data/products";
+import { SITE_CONFIG, SiteConfig } from "@/data/products";
 import { getWhatsAppUrl } from "@/lib/utils";
 
 interface NavbarProps {
   cartCount: number;
   onOpenCart: () => void;
+  siteConfig?: SiteConfig;
 }
 
 const NAV_LINKS = [
@@ -21,7 +22,11 @@ const NAV_LINKS = [
   { label: "Contacto", href: "#contacto" },
 ];
 
-export function Navbar({ cartCount, onOpenCart }: NavbarProps) {
+export function Navbar({
+  cartCount,
+  onOpenCart,
+  siteConfig = SITE_CONFIG,
+}: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -32,8 +37,8 @@ export function Navbar({ cartCount, onOpenCart }: NavbarProps) {
   }, []);
 
   const whatsappUrl = getWhatsAppUrl(
-    SITE_CONFIG.whatsappNumber,
-    "¡Hola Piccolo Giardino! Quería hacerles una consulta sobre sus plantas 🌿"
+    siteConfig.whatsappNumber,
+    `¡Hola ${siteConfig.name}! Quería hacerles una consulta sobre sus plantas 🌿`
   );
 
   return (
@@ -45,7 +50,6 @@ export function Navbar({ cartCount, onOpenCart }: NavbarProps) {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        {/* Logo */}
         <a
           href="#"
           className="flex items-center gap-2.5 group focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1B3B2B] rounded-lg"
@@ -55,7 +59,7 @@ export function Navbar({ cartCount, onOpenCart }: NavbarProps) {
           </div>
           <div>
             <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#1B3B2B] block leading-none">
-              {SITE_CONFIG.name}
+              {siteConfig.name}
             </span>
             <span className="text-[11px] uppercase tracking-widest text-[#3A5A40] font-medium block mt-0.5">
               Tucumán
@@ -63,7 +67,6 @@ export function Navbar({ cartCount, onOpenCart }: NavbarProps) {
           </div>
         </a>
 
-        {/* Navegación Desktop */}
         <nav aria-label="Navegación principal" className="hidden lg:flex items-center gap-7">
           {NAV_LINKS.map((link) => (
             <a
@@ -76,9 +79,7 @@ export function Navbar({ cartCount, onOpenCart }: NavbarProps) {
           ))}
         </nav>
 
-        {/* Acciones Derecha */}
         <div className="flex items-center gap-2.5 sm:gap-3">
-          {/* Botón Carrito de Pedido */}
           <button
             type="button"
             onClick={onOpenCart}
@@ -101,7 +102,6 @@ export function Navbar({ cartCount, onOpenCart }: NavbarProps) {
             </motion.span>
           </button>
 
-          {/* Botón WhatsApp Desktop */}
           <a
             href={whatsappUrl}
             target="_blank"
@@ -112,7 +112,6 @@ export function Navbar({ cartCount, onOpenCart }: NavbarProps) {
             <span>WhatsApp</span>
           </a>
 
-          {/* Botón Hamburguesa Móvil */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -125,7 +124,6 @@ export function Navbar({ cartCount, onOpenCart }: NavbarProps) {
         </div>
       </div>
 
-      {/* Menú Desplegable Móvil */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div

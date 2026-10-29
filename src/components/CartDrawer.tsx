@@ -13,7 +13,7 @@ import {
   Truck,
   Store,
 } from "lucide-react";
-import { Product, SITE_CONFIG } from "@/data/products";
+import { Product, SITE_CONFIG, SiteConfig } from "@/data/products";
 import { formatARS, getWhatsAppUrl } from "@/lib/utils";
 
 export interface CartItem {
@@ -28,6 +28,7 @@ interface CartDrawerProps {
   onUpdateQuantity: (productId: string, quantity: number) => void;
   onRemoveItem: (productId: string) => void;
   onClearCart: () => void;
+  siteConfig?: SiteConfig;
 }
 
 export function CartDrawer({
@@ -37,6 +38,7 @@ export function CartDrawer({
   onUpdateQuantity,
   onRemoveItem,
   onClearCart,
+  siteConfig = SITE_CONFIG,
 }: CartDrawerProps) {
   const [deliveryMethod, setDeliveryMethod] = useState<"uber" | "retiro">("uber");
   const [customerName, setCustomerName] = useState("");
@@ -49,7 +51,7 @@ export function CartDrawer({
 
   const buildWhatsAppOrderMessage = () => {
     const lines: string[] = [
-      `🌿 *¡Hola ${SITE_CONFIG.name}!* Quiero realizar el siguiente pedido desde la web:`,
+      `🌿 *¡Hola ${siteConfig.name}!* Quiero realizar el siguiente pedido desde la web:`,
       "",
     ];
 
@@ -66,7 +68,7 @@ export function CartDrawer({
       `🛵 *Entrega:* ${
         deliveryMethod === "uber"
           ? "Envío mediante Uber (a cotizar según distancia)"
-          : `Retiro en vivero (${SITE_CONFIG.address})`
+          : `Retiro en vivero (${siteConfig.address})`
       }`
     );
 
@@ -84,7 +86,7 @@ export function CartDrawer({
   };
 
   const whatsappCheckoutUrl = getWhatsAppUrl(
-    SITE_CONFIG.whatsappNumber,
+    siteConfig.whatsappNumber,
     buildWhatsAppOrderMessage()
   );
 
@@ -94,10 +96,9 @@ export function CartDrawer({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Tu pedido en Piccolo Giardino"
+          aria-label={`Tu pedido en ${siteConfig.name}`}
           className="fixed inset-0 z-50 overflow-hidden"
         >
-          {/* Fondo oscuro */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -114,7 +115,6 @@ export function CartDrawer({
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
               className="w-screen max-w-md bg-[#FAF7F2] shadow-2xl flex flex-col justify-between"
             >
-              {/* Cabecera del Carrito */}
               <div className="p-5 bg-white border-b border-[#1B3B2B]/10 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <ShoppingBag className="w-5 h-5 text-[#1B3B2B]" />
@@ -132,7 +132,6 @@ export function CartDrawer({
                 </button>
               </div>
 
-              {/* Lista de Productos */}
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 {items.length === 0 ? (
                   <div className="text-center py-16 space-y-4">
@@ -212,7 +211,6 @@ export function CartDrawer({
                       ))}
                     </div>
 
-                    {/* Opciones de Entrega (Uber vs Retiro) */}
                     <div className="bg-white p-4 rounded-2xl border border-[#1B3B2B]/10 space-y-3 mt-4">
                       <span className="text-xs font-bold uppercase tracking-wider text-[#3A5A40] block">
                         ¿Cómo preferís recibirlo?
@@ -270,7 +268,6 @@ export function CartDrawer({
                 )}
               </div>
 
-              {/* Pie del Carrito con Botón a WhatsApp */}
               {items.length > 0 && (
                 <div className="p-5 bg-white border-t border-[#1B3B2B]/10 space-y-3">
                   <div className="flex items-center justify-between">

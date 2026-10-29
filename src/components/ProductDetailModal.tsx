@@ -15,19 +15,21 @@ import {
   MessageCircle,
   Sparkles,
 } from "lucide-react";
-import { Product, SITE_CONFIG } from "@/data/products";
+import { Product, SITE_CONFIG, SiteConfig } from "@/data/products";
 import { formatARS, getWhatsAppUrl } from "@/lib/utils";
 
 interface ProductDetailModalProps {
   product: Product | null;
   onClose: () => void;
   onAddToCart: (product: Product, quantity: number) => void;
+  siteConfig?: SiteConfig;
 }
 
 export function ProductDetailModal({
   product,
   onClose,
   onAddToCart,
+  siteConfig = SITE_CONFIG,
 }: ProductDetailModalProps) {
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -63,8 +65,8 @@ export function ProductDetailModal({
   };
 
   const whatsappDirectUrl = getWhatsAppUrl(
-    SITE_CONFIG.whatsappNumber,
-    `¡Hola Piccolo Giardino! Estoy viendo la ficha de *${product.name}* (${formatARS(
+    siteConfig.whatsappNumber,
+    `¡Hola ${siteConfig.name}! Estoy viendo la ficha de *${product.name}* (${formatARS(
       product.price
     )}) y quería pedirles una foto de los ejemplares disponibles.`
   );
@@ -77,7 +79,6 @@ export function ProductDetailModal({
         aria-labelledby="modal-product-title"
         className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
       >
-        {/* Fondo oscuro con blur */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -86,7 +87,6 @@ export function ProductDetailModal({
           className="fixed inset-0 bg-[#1C241E]/65 backdrop-blur-xs"
         />
 
-        {/* Contenedor del Modal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -94,7 +94,6 @@ export function ProductDetailModal({
           transition={{ duration: 0.25 }}
           className="relative z-10 bg-[#FAF7F2] rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#1B3B2B]/15"
         >
-          {/* Botón Cerrar */}
           <button
             type="button"
             onClick={onClose}
@@ -105,7 +104,6 @@ export function ProductDetailModal({
           </button>
 
           <div className="p-5 sm:p-8 clear-both grid grid-cols-1 md:grid-cols-12 gap-8">
-            {/* Galería de Fotos */}
             <div className="md:col-span-6 space-y-3">
               <div className="relative aspect-square rounded-2xl overflow-hidden bg-white border border-[#1B3B2B]/10">
                 <Image
@@ -118,10 +116,10 @@ export function ProductDetailModal({
               </div>
 
               {product.images.length > 1 && (
-                <div className="flex gap-2.5">
+                <div className="flex gap-2.5 flex-wrap">
                   {product.images.map((imgUrl, idx) => (
                     <button
-                      key={imgUrl}
+                      key={`${imgUrl}-${idx}`}
                       type="button"
                       onClick={() => setActiveImage(idx)}
                       className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
@@ -143,7 +141,6 @@ export function ProductDetailModal({
               )}
             </div>
 
-            {/* Información y Cuidados */}
             <div className="md:col-span-6 flex flex-col justify-between space-y-5">
               <div className="space-y-4">
                 <div>
@@ -160,7 +157,6 @@ export function ProductDetailModal({
                   )}
                 </div>
 
-                {/* Precio */}
                 <div className="flex items-baseline gap-3">
                   <span className="text-2xl sm:text-3xl font-bold text-[#1C241E]">
                     {formatARS(product.price)}
@@ -172,7 +168,6 @@ export function ProductDetailModal({
                   )}
                 </div>
 
-                {/* Tamaño de maceta */}
                 <div className="bg-white px-4 py-2.5 rounded-2xl border border-[#1B3B2B]/10 text-xs sm:text-sm text-[#1C241E]">
                   <strong>Presentación / Maceta:</strong> {product.potSize}
                 </div>
@@ -181,7 +176,6 @@ export function ProductDetailModal({
                   {product.description}
                 </p>
 
-                {/* Grilla de Características Rápidas */}
                 <div className="grid grid-cols-2 gap-2.5 pt-1">
                   <div className="bg-[#EFF3EE] p-3 rounded-2xl flex items-center gap-2.5">
                     <Sun className="w-5 h-5 text-[#C85A32] shrink-0" />
@@ -222,21 +216,21 @@ export function ProductDetailModal({
                   </div>
                 </div>
 
-                {/* Consejos de cuidado del vivero */}
-                <div className="bg-white p-4 rounded-2xl border border-[#1B3B2B]/10 space-y-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#3A5A40] flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#C85A32]" />
-                    Consejos de Piccolo Giardino
-                  </h3>
-                  <ul className="text-xs sm:text-sm text-[#1C241E]/85 space-y-1.5 list-disc list-inside">
-                    {product.careTips.map((tip, i) => (
-                      <li key={i}>{tip}</li>
-                    ))}
-                  </ul>
-                </div>
+                {product.careTips.length > 0 && (
+                  <div className="bg-white p-4 rounded-2xl border border-[#1B3B2B]/10 space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#3A5A40] flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#C85A32]" />
+                      Consejos de {siteConfig.name}
+                    </h3>
+                    <ul className="text-xs sm:text-sm text-[#1C241E]/85 space-y-1.5 list-disc list-inside">
+                      {product.careTips.map((tip, i) => (
+                        <li key={i}>{tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
-              {/* Controles de Cantidad y Compra */}
               <div className="pt-4 border-t border-[#1B3B2B]/10 space-y-3">
                 {product.stock !== "agotado" && (
                   <div className="flex items-center gap-3">

@@ -19,12 +19,14 @@ import {
 import {
   PRODUCTS,
   CATEGORIES,
+  SITE_CONFIG,
   Product,
+  CategoryInfo,
+  SiteConfig,
   ProductCategory,
   LightLevel,
   WaterLevel,
   EnvironmentType,
-  SITE_CONFIG,
 } from "@/data/products";
 import { formatARS, getWhatsAppUrl } from "@/lib/utils";
 
@@ -33,15 +35,25 @@ interface CatalogSectionProps {
   onSelectCategory: (cat: ProductCategory | "todas") => void;
   onSelectProduct: (product: Product) => void;
   onAddToCart: (product: Product, quantity?: number) => void;
+  products?: Product[];
+  categories?: CategoryInfo[];
+  siteConfig?: SiteConfig;
 }
 
 const BADGE_STYLES: Record<string, { label: string; className: string }> = {
   nuevo: { label: "Nuevo", className: "bg-[#1B3B2B] text-white" },
   oferta: { label: "Oferta", className: "bg-[#C85A32] text-white" },
-  poca_luz: { label: "Poca luz", className: "bg-[#EFF3EE] text-[#1B3B2B] border border-[#1B3B2B]/20" },
+  poca_luz: {
+    label: "Poca luz",
+    className: "bg-[#EFF3EE] text-[#1B3B2B] border border-[#1B3B2B]/20",
+  },
   pet_friendly: {
     label: "🐾 Pet-Friendly",
     className: "bg-amber-100 text-amber-950 border border-amber-300",
+  },
+  agotado: {
+    label: "Agotado",
+    className: "bg-stone-600 text-white",
   },
 };
 
@@ -56,6 +68,9 @@ export function CatalogSection({
   onSelectCategory,
   onSelectProduct,
   onAddToCart,
+  products = PRODUCTS,
+  categories = CATEGORIES,
+  siteConfig = SITE_CONFIG,
 }: CatalogSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"featured" | "price_asc" | "price_desc">("featured");
@@ -85,35 +100,38 @@ export function CatalogSection({
   };
 
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((product) => {
-      if (selectedCategory !== "todas" && product.category !== selectedCategory) return false;
+    return products
+      .filter((product) => {
+        if (selectedCategory !== "todas" && product.category !== selectedCategory) return false;
 
-      if (searchQuery.trim() !== "") {
-        const q = searchQuery.toLowerCase();
-        const matchName = product.name.toLowerCase().includes(q);
-        const matchSci = product.scientificName?.toLowerCase().includes(q) ?? false;
-        const matchDesc = product.shortDescription.toLowerCase().includes(q);
-        if (!matchName && !matchSci && !matchDesc) return false;
-      }
+        if (searchQuery.trim() !== "") {
+          const q = searchQuery.toLowerCase();
+          const matchName = product.name.toLowerCase().includes(q);
+          const matchSci = product.scientificName?.toLowerCase().includes(q) ?? false;
+          const matchDesc = product.shortDescription.toLowerCase().includes(q);
+          if (!matchName && !matchSci && !matchDesc) return false;
+        }
 
-      if (lightFilter !== "todos" && product.light !== lightFilter) return false;
-      if (waterFilter !== "todos" && product.water !== waterFilter) return false;
-      if (
-        envFilter !== "todos" &&
-        product.environment !== "ambos" &&
-        product.environment !== envFilter
-      ) {
-        return false;
-      }
-      if (onlyPetFriendly && !product.petFriendly) return false;
+        if (lightFilter !== "todos" && product.light !== lightFilter) return false;
+        if (waterFilter !== "todos" && product.water !== waterFilter) return false;
+        if (
+          envFilter !== "todos" &&
+          product.environment !== "ambos" &&
+          product.environment !== envFilter
+        ) {
+          return false;
+        }
+        if (onlyPetFriendly && !product.petFriendly) return false;
 
-      return true;
-    }).sort((a, b) => {
-      if (sortBy === "price_asc") return a.price - b.price;
-      if (sortBy === "price_desc") return b.price - a.price;
-      return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
-    });
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "price_asc") return a.price - b.price;
+        if (sortBy === "price_desc") return b.price - a.price;
+        return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+      });
   }, [
+    products,
     selectedCategory,
     searchQuery,
     sortBy,
@@ -134,7 +152,6 @@ export function CatalogSection({
   return (
     <section id="catalogo" className="py-16 md:py-24 bg-[#EFF3EE]/60 border-y border-[#1B3B2B]/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Encabezado de sección */}
         <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="text-xs font-bold uppercase tracking-widest text-[#C85A32] block mb-2">
             Catálogo Online Actualizado
@@ -148,9 +165,7 @@ export function CatalogSection({
           </p>
         </div>
 
-        {/* Panel de Filtros */}
         <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-[#1B3B2B]/10 mb-8 space-y-5">
-          {/* Fila 1: Pestañas de Categorías */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
               type="button"
@@ -161,9 +176,9 @@ export function CatalogSection({
                   : "bg-[#FAF7F2] text-[#1C241E] hover:bg-[#EFF3EE]"
               }`}
             >
-              Todas ({PRODUCTS.length})
+              Todas ({products.length})
             </button>
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat.id}
                 type="button"
@@ -179,7 +194,6 @@ export function CatalogSection({
             ))}
           </div>
 
-          {/* Fila 2: Buscador por texto + Orden por precio */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
             <div className="md:col-span-8 relative">
               <label htmlFor="catalog-search" className="sr-only">
@@ -213,9 +227,7 @@ export function CatalogSection({
             </div>
           </div>
 
-          {/* Fila 3: Filtros Botánicos (Luz, Riego, Ambiente, Mascotas) */}
           <div className="pt-3 border-t border-[#1B3B2B]/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Filtro Luz */}
             <div className="flex items-center gap-2 bg-[#FAF7F2] px-3.5 py-2 rounded-2xl border border-[#1B3B2B]/10">
               <Sun className="w-4 h-4 text-[#C85A32] shrink-0" />
               <label htmlFor="filter-light" className="text-xs font-semibold text-[#1B3B2B] shrink-0">
@@ -234,7 +246,6 @@ export function CatalogSection({
               </select>
             </div>
 
-            {/* Filtro Riego */}
             <div className="flex items-center gap-2 bg-[#FAF7F2] px-3.5 py-2 rounded-2xl border border-[#1B3B2B]/10">
               <Droplets className="w-4 h-4 text-[#3A5A40] shrink-0" />
               <label htmlFor="filter-water" className="text-xs font-semibold text-[#1B3B2B] shrink-0">
@@ -253,7 +264,6 @@ export function CatalogSection({
               </select>
             </div>
 
-            {/* Filtro Interior / Exterior */}
             <div className="flex items-center gap-2 bg-[#FAF7F2] px-3.5 py-2 rounded-2xl border border-[#1B3B2B]/10">
               <Home className="w-4 h-4 text-[#1B3B2B] shrink-0" />
               <label htmlFor="filter-env" className="text-xs font-semibold text-[#1B3B2B] shrink-0">
@@ -271,7 +281,6 @@ export function CatalogSection({
               </select>
             </div>
 
-            {/* Botón Pet-Friendly */}
             <button
               type="button"
               onClick={() => setOnlyPetFriendly(!onlyPetFriendly)}
@@ -288,11 +297,10 @@ export function CatalogSection({
             </button>
           </div>
 
-          {/* Barra de estado de resultados y limpiar filtros */}
           <div className="flex items-center justify-between text-xs sm:text-sm text-[#1C241E]/75 pt-1">
             <span className="flex items-center gap-1.5">
               <SlidersHorizontal className="w-3.5 h-3.5 text-[#3A5A40]" />
-              Mostrando <strong>{filteredProducts.length}</strong> de {PRODUCTS.length} productos
+              Mostrando <strong>{filteredProducts.length}</strong> de {products.length} productos
             </span>
             {hasActiveFilters && (
               <button
@@ -307,7 +315,6 @@ export function CatalogSection({
           </div>
         </div>
 
-        {/* Grilla de Productos con Animación Layout */}
         {filteredProducts.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-[#1B3B2B]/10 max-w-lg mx-auto">
             <p className="font-serif text-2xl font-bold text-[#1B3B2B] mb-2">
@@ -332,11 +339,11 @@ export function CatalogSection({
           >
             <AnimatePresence mode="popLayout">
               {filteredProducts.map((product) => {
-                const stockInfo = STOCK_LABELS[product.stock];
+                const stockInfo = STOCK_LABELS[product.stock] || STOCK_LABELS.disponible;
                 const isAdded = addedId === product.id;
                 const directConsultUrl = getWhatsAppUrl(
-                  SITE_CONFIG.whatsappNumber,
-                  `¡Hola Piccolo Giardino! Quería consultar por *${product.name}* (${formatARS(
+                  siteConfig.whatsappNumber,
+                  `¡Hola ${siteConfig.name}! Quería consultar por *${product.name}* (${formatARS(
                     product.price
                   )}) que vi en el catálogo web.`
                 );
@@ -351,7 +358,6 @@ export function CatalogSection({
                     transition={{ duration: 0.25 }}
                     className="group bg-white rounded-3xl overflow-hidden border border-[#1B3B2B]/10 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1"
                   >
-                    {/* Imagen + Etiquetas */}
                     <div
                       onClick={() => onSelectProduct(product)}
                       className="relative aspect-[4/4] bg-[#FAF7F2] overflow-hidden cursor-pointer"
@@ -364,7 +370,6 @@ export function CatalogSection({
                         className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                       />
 
-                      {/* Etiquetas superiores */}
                       <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 max-w-[85%]">
                         {product.badges.map((badge) => {
                           const style = BADGE_STYLES[badge];
@@ -380,7 +385,6 @@ export function CatalogSection({
                         })}
                       </div>
 
-                      {/* Botón rápido de Ver Ficha */}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -395,10 +399,8 @@ export function CatalogSection({
                       </button>
                     </div>
 
-                    {/* Contenido de la Tarjeta */}
                     <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                       <div>
-                        {/* Indicador de Stock + Características rápidas */}
                         <div className="flex items-center justify-between text-xs mb-2">
                           <span className={`inline-flex items-center gap-1.5 font-medium ${stockInfo.text}`}>
                             <span className={`w-2 h-2 rounded-full ${stockInfo.dot}`} />
@@ -435,7 +437,6 @@ export function CatalogSection({
                       </div>
 
                       <div className="pt-3 border-t border-[#1B3B2B]/10 space-y-3">
-                        {/* Precio en Pesos Argentinos */}
                         <div className="flex items-baseline gap-2">
                           <span className="text-xl font-bold text-[#1C241E]">
                             {formatARS(product.price)}
@@ -447,7 +448,6 @@ export function CatalogSection({
                           )}
                         </div>
 
-                        {/* Botones de Acción: Agregar al pedido + Consultar */}
                         <div className="grid grid-cols-5 gap-2">
                           <button
                             type="button"
